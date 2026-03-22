@@ -21,17 +21,38 @@
             todoList.innerHTML = '';
             todos.forEach(todo => {
                 const li = document.createElement('li');
-                li.textContent = `${todo.title}: ${todo.description} (Completed: ${todo.completed})`;
+                li.textContent = `${todo.title}: ${todo.description}`;
+
+                const checkButton = document.createElement('button');
+                checkButton.textContent = todo.completed ? '✅ Completed' : 'Check';
+                checkButton.onclick = () => toggleComplete(todo);
+
                 const editButton = document.createElement('button');
                 editButton.textContent = 'Edit';
                 editButton.onclick = () => editTodo(todo.id);
+
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Delete';
                 deleteButton.onclick = () => deleteTodo(todo.id);
+
+                li.appendChild(checkButton);
                 li.appendChild(editButton);
                 li.appendChild(deleteButton);
                 todoList.appendChild(li);
             });
+        }
+
+        async function toggleComplete(todo) {
+            const response = await fetch(`/todos/${todo.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed })
+            });
+            if (response.ok) {
+                fetchTodos();
+            }
         }
 
         async function editTodo(id) {
