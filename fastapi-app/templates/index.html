@@ -21,10 +21,10 @@
             todoList.innerHTML = '';
             todos.forEach(todo => {
                 const li = document.createElement('li');
-                li.textContent = `${todo.title}: ${todo.description}`;
+                li.textContent = `${todo.title}: ${todo.description} (Completed: ${todo.completed})`;
 
                 const checkButton = document.createElement('button');
-                checkButton.textContent = todo.completed ? '✅ Completed' : 'Check';
+                checkButton.textContent = 'Check';
                 checkButton.onclick = () => toggleComplete(todo);
 
                 const editButton = document.createElement('button');
