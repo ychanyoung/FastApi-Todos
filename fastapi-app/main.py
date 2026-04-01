@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from typing import Optional
 import json
 import os
 
@@ -12,6 +13,7 @@ class TodoItem(BaseModel):
     title: str
     description: str
     completed: bool
+    due_date: Optional[str] = None
 
 # JSON 파일 경로
 TODO_FILE = "todo.json"
@@ -63,6 +65,6 @@ def delete_todo(todo_id: int):
 # HTML 파일 서빙
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    with open("templates/index.html", "r") as file:
+    with open("templates/index.html", "r", encoding="utf-8") as file:
         content = file.read()
     return HTMLResponse(content=content)

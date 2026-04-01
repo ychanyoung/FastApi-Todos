@@ -11,6 +11,7 @@
     <form id="todo-form">
         <input type="text" id="title" placeholder="Title" required>
         <input type="text" id="description" placeholder="Description" required>
+        <input type="date" id="due_date">
         <button type="submit">Add To-Do</button>
     </form>
     <script>
@@ -21,7 +22,8 @@
             todoList.innerHTML = '';
             todos.forEach(todo => {
                 const li = document.createElement('li');
-                li.textContent = `${todo.title}: ${todo.description} (Completed: ${todo.completed})`;
+                const dueText = todo.due_date ? ` | 마감일: ${todo.due_date}` : '';
+                li.textContent = `${todo.title}: ${todo.description} (Completed: ${todo.completed}${dueText})`;
 
                 const checkButton = document.createElement('button');
                 checkButton.textContent = 'Check';
@@ -48,7 +50,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed })
+                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date })
             });
             if (response.ok) {
                 fetchTodos();
@@ -64,7 +66,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id, title, description, completed })
+                body: JSON.stringify({ id, title, description, completed, due_date: null })
             });
             if (response.ok) {
                 fetchTodos();
@@ -84,12 +86,13 @@
             event.preventDefault();
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
+            const due_date = document.getElementById('due_date').value || null;
             const response = await fetch('/todos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: Date.now(), title, description, completed: false })
+                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date })
             });
             if (response.ok) {
                 fetchTodos();
