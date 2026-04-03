@@ -61,12 +61,13 @@
             const title = prompt('Enter new title:');
             const description = prompt('Enter new description:');
             const completed = confirm('Is this task completed?');
+            const due_date = prompt('Enter due date (YYYY-MM-DD, leave blank to remove):') || null;
             const response = await fetch(`/todos/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id, title, description, completed, due_date: null })
+                body: JSON.stringify({ id, title, description, completed, due_date })
             });
             if (response.ok) {
                 fetchTodos();
