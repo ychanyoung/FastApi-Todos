@@ -63,7 +63,7 @@ def delete_todo(todo_id: int):
     return {"message": "To-Do item deleted"}
 
 # HTML 파일 서빙
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, responses={500: {"description": "Template file not found"}})
 def read_root():
     try:
         with open("templates/index.html", "r", encoding="utf-8") as file:
