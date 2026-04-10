@@ -19,7 +19,7 @@ for filepath in files:
 
     print(f"테스트 생성 중: {filepath}")
 
-    prompt = f"아래 FastAPI 코드에 대한 pytest 테스트 코드를 작성해줘.\n\n규칙:\n- pytest와 httpx의 TestClient 사용\n- 각 엔드포인트별 정상/실패 케이스 모두 포함\n- 한국어 docstring으로 각 테스트 설명\n- 코드만 출력하고 다른 설명은 하지 마\n\n파일 경로: {filepath}\n\n소스 코드:\n{source_code}"
+    prompt = f"아래 FastAPI 코드에 대한 pytest 테스트 코드를 작성해줘.\n\n규칙:\n- pytest와 httpx의 TestClient 사용\n- 각 엔드포인트별 정상/실패 케이스 모두 포함\n- 한국어 docstring으로 각 테스트 설명\n- 코드만 출력하고 다른 설명은 하지 마\n- 테스트에서 파일/디렉토리를 생성할 경우, 테스트 전에 원본이 존재하면 내용을 백업하고 테스트 후 반드시 원본을 복원해야 함 (원본이 없을 때만 삭제)\n\n파일 경로: {filepath}\n\n소스 코드:\n{source_code}"
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",

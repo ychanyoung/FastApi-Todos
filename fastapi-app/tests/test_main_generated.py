@@ -216,27 +216,48 @@ class TestDeleteTodo:
 class TestRootEndpoint:
     def test_read_root_success(self):
         """루트 엔드포인트가 HTML을 성공적으로 반환하는지 테스트합니다."""
-        # 테스트용 HTML 파일 생성
+        template_path = "templates/index.html"
+        original_content = None
+
+        if os.path.exists(template_path):
+            with open(template_path, "r", encoding="utf-8") as f:
+                original_content = f.read()
+
         os.makedirs("templates", exist_ok=True)
         test_html = "<html><body><h1>Test Page</h1></body></html>"
-        
-        with open("templates/index.html", "w", encoding="utf-8") as file:
+
+        with open(template_path, "w", encoding="utf-8") as file:
             file.write(test_html)
-        
+
         try:
             response = client.get("/")
             assert response.status_code == 200
             assert response.headers["content-type"] == "text/html; charset=utf-8"
             assert "Test Page" in response.text
         finally:
-            # 정리
-            if os.path.exists("templates/index.html"):
-                os.remove("templates/index.html")
-            if os.path.exists("templates"):
-                os.rmdir("templates")
+            if original_content is not None:
+                with open(template_path, "w", encoding="utf-8") as f:
+                    f.write(original_content)
+            else:
+                if os.path.exists(template_path):
+                    os.remove(template_path)
+                if os.path.exists("templates"):
+                    os.rmdir("templates")
 
     def test_read_root_file_not_found(self):
         """HTML 파일이 없을 때 에러가 발생하는지 테스트합니다."""
-        # templates 디렉토리가 없는 상태에서 테스트
-        response = client.get("/")
-        assert response.status_code == 500
+        template_path = "templates/index.html"
+        original_content = None
+
+        if os.path.exists(template_path):
+            with open(template_path, "r", encoding="utf-8") as f:
+                original_content = f.read()
+            os.remove(template_path)
+
+        try:
+            response = client.get("/")
+            assert response.status_code == 500
+        finally:
+            if original_content is not None:
+                with open(template_path, "w", encoding="utf-8") as f:
+                    f.write(original_content)
