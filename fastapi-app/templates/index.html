@@ -4,44 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List</title>
+    <style>
+        body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 4px; }
+        h2.completed-title { border-color: #aaa; color: #aaa; }
+        ul { list-style: none; padding: 0; }
+        li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        li.completed span.text { text-decoration: line-through; color: #aaa; }
+        .due-date { font-size: 0.85em; color: #888; }
+        .due-overdue { color: #e33; font-weight: bold; }
+        form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+        input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-check { background: #4caf50; color: #fff; }
+        .btn-edit { background: #2196f3; color: #fff; }
+        .btn-delete { background: #f44336; color: #fff; }
+        .btn-submit { background: #333; color: #fff; }
+    </style>
 </head>
 <body>
     <h1>To-Do List</h1>
-    <ul id="todo-list"></ul>
+
+    <h2>미완료 항목</h2>
+    <ul id="todo-incomplete"></ul>
+
+    <h2 class="completed-title">완료 항목</h2>
+    <ul id="todo-complete"></ul>
+
     <form id="todo-form">
         <input type="text" id="title" placeholder="Title" required>
         <input type="text" id="description" placeholder="Description" required>
         <input type="date" id="due_date">
-        <button type="submit">Add To-Do</button>
+        <button type="submit" class="btn-submit">Add To-Do</button>
     </form>
     <script>
+        function sortByDueDate(todos) {
+            return todos.slice().sort((a, b) => {
+                if (!a.due_date && !b.due_date) return 0;
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return a.due_date.localeCompare(b.due_date);
+            });
+        }
+
+        function renderTodoItem(todo) {
+            const li = document.createElement('li');
+            if (todo.completed) li.classList.add('completed');
+
+            const today = new Date().toISOString().slice(0, 10);
+            let dueText = '';
+            let dueClass = 'due-date';
+            if (todo.due_date) {
+                dueText = ` | 마감일: ${todo.due_date}`;
+                if (!todo.completed && todo.due_date < today) dueClass += ' due-overdue';
+            }
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'text';
+            textSpan.style.flex = '1';
+            textSpan.innerHTML = `<strong>${todo.title}</strong>: ${todo.description}<span class="${dueClass}">${dueText}</span>`;
+
+            const checkButton = document.createElement('button');
+            checkButton.className = 'btn-check';
+            checkButton.textContent = todo.completed ? '취소' : '완료';
+            checkButton.onclick = () => toggleComplete(todo);
+
+            const editButton = document.createElement('button');
+            editButton.className = 'btn-edit';
+            editButton.textContent = 'Edit';
+            editButton.onclick = () => editTodo(todo.id);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'btn-delete';
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = () => deleteTodo(todo.id);
+
+            li.appendChild(textSpan);
+            li.appendChild(checkButton);
+            li.appendChild(editButton);
+            li.appendChild(deleteButton);
+            return li;
+        }
+
         async function fetchTodos() {
             const response = await fetch('/todos');
             const todos = await response.json();
-            const todoList = document.getElementById('todo-list');
-            todoList.innerHTML = '';
-            todos.forEach(todo => {
-                const li = document.createElement('li');
-                const dueText = todo.due_date ? ` | 마감일: ${todo.due_date}` : '';
-                li.textContent = `${todo.title}: ${todo.description} (Completed: ${todo.completed}${dueText})`;
 
-                const checkButton = document.createElement('button');
-                checkButton.textContent = 'Check';
-                checkButton.onclick = () => toggleComplete(todo);
+            const incomplete = sortByDueDate(todos.filter(t => !t.completed));
+            const complete = sortByDueDate(todos.filter(t => t.completed));
 
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Edit';
-                editButton.onclick = () => editTodo(todo.id);
+            const incompleteList = document.getElementById('todo-incomplete');
+            const completeList = document.getElementById('todo-complete');
+            incompleteList.innerHTML = '';
+            completeList.innerHTML = '';
 
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.onclick = () => deleteTodo(todo.id);
-
-                li.appendChild(checkButton);
-                li.appendChild(editButton);
-                li.appendChild(deleteButton);
-                todoList.appendChild(li);
-            });
+            incomplete.forEach(todo => incompleteList.appendChild(renderTodoItem(todo)));
+            complete.forEach(todo => completeList.appendChild(renderTodoItem(todo)));
         }
 
         async function toggleComplete(todo) {
