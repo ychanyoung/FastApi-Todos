@@ -45,67 +45,7 @@ jobs:
       - name: Generate test code with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          python << 'EOF'
-          import anthropic
-          import os
-
-          client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
-          with open("changed_files.txt") as f:
-              files = [l.strip() for l in f if l.strip()]
-
-          if not files:
-              print("변경된 파일 없음, 종료")
-              exit(0)
-
-          for filepath in files:
-              if not os.path.exists(filepath):
-                  continue
-
-              with open(filepath) as f:
-                  source_code = f.read()
-
-              print(f"테스트 생성 중: {filepath}")
-
-              message = client.messages.create(
-                  model="claude-sonnet-4-20250514",
-                  max_tokens=4096,
-                  messages=[
-                      {
-                          "role": "user",
-                          "content": f"""아래 FastAPI 코드에 대한 pytest 테스트 코드를 작성해줘.
-
-          규칙:
-          - pytest와 httpx의 TestClient 사용
-          - 각 엔드포인트별 정상/실패 케이스 모두 포함
-          - 한국어 docstring으로 각 테스트 설명
-          - 코드만 출력하고 다른 설명은 하지 마
-
-          파일 경로: {filepath}
-
-          소스 코드:
-````python
-          {source_code}
-```"""
-                      }
-                  ]
-              )
-
-              test_code = message.content[0].text
-
-              if "```python" in test_code:
-                  test_code = test_code.split("```python")[1].split("```")[0].strip()
-
-              filename = os.path.basename(filepath).replace(".py", "")
-              test_path = f"fastapi-app/tests/test_{filename}_generated.py"
-              os.makedirs("fastapi-app/tests", exist_ok=True)
-
-              with open(test_path, "w") as f:
-                  f.write(test_code)
-
-              print(f"생성 완료: {test_path}")
-          EOF
+        run: python generate_tests.py
 
       - name: Commit and push generated tests
         run: |
@@ -119,4 +59,3 @@ jobs:
             git commit -m "🤖 Claude가 테스트 코드 자동 생성"
             git push
           fi
-```
