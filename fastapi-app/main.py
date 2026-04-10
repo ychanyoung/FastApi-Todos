@@ -65,9 +65,12 @@ def delete_todo(todo_id: int):
 # HTML 파일 서빙
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    with open("templates/index.html", "r", encoding="utf-8") as file:
-        content = file.read()
-    return HTMLResponse(content=content)
+    try:
+        with open("templates/index.html", "r", encoding="utf-8") as file:
+            content = file.read()
+        return HTMLResponse(content=content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Template file not found")
 
 
 #테스트용 주석
