@@ -40,3 +40,8 @@ for filepath in files:
         f.write(test_code)
 
     print(f"생성 완료: {test_path}")
+    print(f"\n{'='*60}")
+    print(f"[생성된 테스트 코드 - {test_path}]")
+    print(f"{'='*60}")
+    print(test_code)
+    print(f"{'='*60}\n")

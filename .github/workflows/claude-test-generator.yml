@@ -47,6 +47,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python generate_tests.py
 
+      - name: Upload generated tests as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-tests
+          path: fastapi-app/tests/test_*_generated.py
+          if-no-files-found: ignore
+
       - name: Commit and push generated tests
         run: |
           git config user.name "claude-bot"
