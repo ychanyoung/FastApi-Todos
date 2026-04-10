@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
 
 app = FastAPI()
 
@@ -66,7 +69,7 @@ def delete_todo(todo_id: int):
 @app.get("/", response_class=HTMLResponse, responses={500: {"description": "Template file not found"}})
 def read_root():
     try:
-        with open("templates/index.html", "r", encoding="utf-8") as file:
+        with open(BASE_DIR / "templates" / "index.html", "r", encoding="utf-8") as file:
             content = file.read()
         return HTMLResponse(content=content)
     except FileNotFoundError:
