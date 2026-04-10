@@ -33,12 +33,12 @@ jobs:
       - name: Install dependencies
         run: pip install anthropic
 
-      - name: Get all Python files
+      - name: Get changed Python files
         run: |
-          find fastapi-app -name "*.py" \
+          git diff --name-only HEAD~1 HEAD -- 'fastapi-app/**/*.py' \
             | grep -v 'fastapi-app/tests/' \
             | grep -v '__pycache__' \
-            > changed_files.txt
+            > changed_files.txt || true
           cat changed_files.txt
 
       - name: Generate test code with Claude
