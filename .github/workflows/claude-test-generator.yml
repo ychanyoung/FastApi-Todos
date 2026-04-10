@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "claude-bot"
           git config user.email "claude-bot@anthropic.com"
-          git add fastapi-app/tests/test_*_generated.py
+          git add fastapi-app/tests/test_*_generated.py 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "변경사항 없음"
