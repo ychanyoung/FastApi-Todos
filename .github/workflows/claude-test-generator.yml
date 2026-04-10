@@ -39,7 +39,7 @@ jobs:
           git diff --name-only HEAD~1 HEAD -- 'fastapi-app/**/*.py' \
             | grep -v 'fastapi-app/tests/' \
             | grep -v '__pycache__' \
-            > changed_files.txt
+            > changed_files.txt || true
           cat changed_files.txt
 
       - name: Generate test code with Claude
