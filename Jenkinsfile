@@ -161,8 +161,8 @@ EOF
             steps {
                 sh """
                     sleep 10
-                    curl -fsS http://${REMOTE_HOST}:5002/ -o /dev/null && echo 'FastAPI OK'
-                    curl -fsS http://${REMOTE_HOST}:7070/-/healthy && echo 'Prometheus OK'
+                    curl -fsS http://${REMOTE_HOST}:8000/ -o /dev/null && echo 'FastAPI OK'
+                    curl -fsS http://${REMOTE_HOST}:9090/-/healthy && echo 'Prometheus OK'
                     curl -fsS http://${REMOTE_HOST}:3000/api/health -o /dev/null && echo 'Grafana OK'
                 """
             }

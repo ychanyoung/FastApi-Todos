@@ -6,7 +6,7 @@ services:
     image: chanzero11/fastapi-app:latest
     container_name: FastApi-app
     ports:
-      - "5002:8000"
+      - "8000:8000"
     restart: unless-stopped
     networks:
       - loadtest-net
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "7070:9090"
+      - "9090:9090"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     restart: unless-stopped
@@ -60,7 +60,7 @@ services:
     image: prom/node-exporter:latest
     container_name: node-exporter
     ports:
-      - "7100:9100"
+      - "9100:9100"
     restart: unless-stopped
     networks:
       - loadtest-net
