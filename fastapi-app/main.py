@@ -5,6 +5,7 @@ from typing import Optional
 import json
 import os
 from pathlib import Path
+from prometheus_fastapi_instrumentator import Instrumentator
 
 BASE_DIR = Path(__file__).parent
 
@@ -66,17 +67,9 @@ def delete_todo(todo_id: int):
     return {"message": "To-Do item deleted"}
 
 # HTML 파일 서빙
-@app.get("/", response_class=HTMLResponse, responses={500: {"description": "Template file not found"}})
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    try:
-        with open(BASE_DIR / "templates" / "index.html", "r", encoding="utf-8") as file:
-            content = file.read()
-        return HTMLResponse(content=content)
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Template file not found")
+    with open("templates/index.html", "r") as file:
+        content = file.read()
+    return HTMLResponse(content=content)
 
-
-#테스트용 주석
-#테스트용 주석
-#테스트용 주석
-#테스트용 주석 x
