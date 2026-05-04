@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,7 @@ class TodoItem(BaseModel):
     description: str
     completed: bool
     due_date: Optional[str] = None
+    created_at: Optional[str] = None
 
 # JSON 파일 경로
 TODO_FILE = "todo.json"
@@ -44,9 +46,12 @@ def get_todos():
 @app.post("/todos", response_model=TodoItem)
 def create_todo(todo: TodoItem):
     todos = load_todos()
-    todos.append(todo.model_dump())
+    data = todo.model_dump()
+    if not data.get("created_at"):
+        data["created_at"] = date.today().isoformat()
+    todos.append(data)
     save_todos(todos)
-    return todo
+    return TodoItem(**data)
 
 # To-Do 항목 수정
 @app.put("/todos/{todo_id}", response_model=TodoItem)
@@ -54,9 +59,12 @@ def update_todo(todo_id: int, updated_todo: TodoItem):
     todos = load_todos()
     for todo in todos:
         if todo["id"] == todo_id:
-            todo.update(updated_todo.model_dump())
+            data = updated_todo.model_dump()
+            if not data.get("created_at"):
+                data["created_at"] = todo.get("created_at")
+            todo.update(data)
             save_todos(todos)
-            return updated_todo
+            return TodoItem(**todo)
     raise HTTPException(status_code=404, detail="To-Do item not found")
 
 # To-Do 항목 삭제

@@ -149,6 +149,98 @@
             border: 1px dashed var(--border);
             border-radius: 8px;
         }
+
+        .timeline {
+            margin-top: 40px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+        }
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .timeline-row-label {
+            width: 130px;
+            flex-shrink: 0;
+            font-size: 0.85em;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 10px;
+        }
+        .timeline-row-label.completed {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+        .timeline-track {
+            position: relative;
+            flex: 1;
+            height: 22px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            overflow: visible;
+        }
+        .timeline-axis-row .timeline-track {
+            background: transparent;
+            height: 18px;
+        }
+        .timeline-axis-label {
+            position: absolute;
+            top: 0;
+            font-size: 0.72em;
+            color: var(--text-muted);
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .timeline-axis-label:first-child { transform: translateX(0); }
+        .timeline-axis-label:last-child { transform: translateX(-100%); }
+        .timeline-bar {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(33, 150, 243, 0.35);
+            border: 1px solid rgba(33, 150, 243, 0.7);
+            border-radius: 4px;
+            min-width: 4px;
+        }
+        .timeline-today {
+            position: absolute;
+            top: -4px;
+            bottom: -4px;
+            width: 2px;
+            background: var(--burgundy);
+            z-index: 5;
+            pointer-events: none;
+        }
+        .timeline-today-label {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+            font-size: 0.72em;
+            color: var(--burgundy);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .timeline-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            font-size: 0.8em;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-swatch {
+            display: inline-block;
+            width: 18px;
+            height: 12px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -169,6 +261,24 @@
         <input type="date" id="due_date">
         <button type="submit" class="btn-submit">추가</button>
     </form>
+
+    <section class="timeline">
+        <h2>마감일 타임라인</h2>
+        <div id="timeline-empty" class="empty" style="display:none;">
+            표시할 항목이 없습니다 (생성일과 마감일이 모두 있는 To-Do만 표시됩니다)
+        </div>
+        <div id="timeline-content"></div>
+        <div class="timeline-legend">
+            <div class="legend-item">
+                <span class="legend-swatch" style="background: rgba(33, 150, 243, 0.35); border: 1px solid rgba(33, 150, 243, 0.7);"></span>
+                생성일 → 마감일
+            </div>
+            <div class="legend-item">
+                <span class="legend-swatch" style="background: var(--burgundy); width: 3px;"></span>
+                오늘
+            </div>
+        </div>
+    </section>
     <script>
         function sortByDueDate(todos) {
             return todos.slice().sort((a, b) => {
@@ -203,7 +313,7 @@
             const editButton = document.createElement('button');
             editButton.className = 'btn-edit';
             editButton.textContent = '수정';
-            editButton.onclick = () => editTodo(todo.id);
+            editButton.onclick = () => editTodo(todo);
 
             const deleteButton = document.createElement('button');
             deleteButton.className = 'btn-delete';
@@ -250,6 +360,102 @@
             } else {
                 complete.forEach(todo => completeList.appendChild(renderTodoItem(todo)));
             }
+
+            renderTimeline(todos);
+        }
+
+        function renderTimeline(todos) {
+            const valid = todos.filter(t => t.created_at && t.due_date);
+            const emptyEl = document.getElementById('timeline-empty');
+            const contentEl = document.getElementById('timeline-content');
+
+            if (valid.length === 0) {
+                emptyEl.style.display = 'block';
+                contentEl.innerHTML = '';
+                return;
+            }
+            emptyEl.style.display = 'none';
+
+            const today = new Date().toISOString().slice(0, 10);
+            const allDates = [today];
+            valid.forEach(t => { allDates.push(t.created_at, t.due_date); });
+
+            let minDate = allDates.reduce((a, b) => a < b ? a : b);
+            let maxDate = allDates.reduce((a, b) => a > b ? a : b);
+
+            const minD = new Date(minDate);
+            minD.setDate(minD.getDate() - 3);
+            const maxD = new Date(maxDate);
+            maxD.setDate(maxD.getDate() + 3);
+
+            const totalMs = maxD - minD;
+            const pct = (dateStr) => ((new Date(dateStr) - minD) / totalMs) * 100;
+
+            contentEl.innerHTML = '';
+
+            // 축 (날짜 라벨 + 오늘 마커)
+            const axisRow = document.createElement('div');
+            axisRow.className = 'timeline-row timeline-axis-row';
+            const axisLabel = document.createElement('div');
+            axisLabel.className = 'timeline-row-label';
+            axisLabel.textContent = '';
+            const axisTrack = document.createElement('div');
+            axisTrack.className = 'timeline-track';
+
+            const fmt = d => d.toISOString().slice(0, 10);
+            const startLbl = document.createElement('span');
+            startLbl.className = 'timeline-axis-label';
+            startLbl.style.left = '0%';
+            startLbl.textContent = fmt(minD);
+            axisTrack.appendChild(startLbl);
+
+            const endLbl = document.createElement('span');
+            endLbl.className = 'timeline-axis-label';
+            endLbl.style.left = '100%';
+            endLbl.textContent = fmt(maxD);
+            axisTrack.appendChild(endLbl);
+
+            const todayLbl = document.createElement('span');
+            todayLbl.className = 'timeline-today-label';
+            todayLbl.style.left = pct(today) + '%';
+            todayLbl.textContent = '오늘 ' + today;
+            axisTrack.appendChild(todayLbl);
+
+            axisRow.appendChild(axisLabel);
+            axisRow.appendChild(axisTrack);
+            contentEl.appendChild(axisRow);
+
+            // 각 todo 행
+            valid.forEach(todo => {
+                const row = document.createElement('div');
+                row.className = 'timeline-row';
+
+                const label = document.createElement('div');
+                label.className = 'timeline-row-label' + (todo.completed ? ' completed' : '');
+                label.textContent = todo.title;
+                label.title = todo.title;
+
+                const track = document.createElement('div');
+                track.className = 'timeline-track';
+
+                const bar = document.createElement('div');
+                bar.className = 'timeline-bar';
+                const left = pct(todo.created_at);
+                const right = pct(todo.due_date);
+                bar.style.left = left + '%';
+                bar.style.width = Math.max(right - left, 0.3) + '%';
+                bar.title = `${todo.title}\n생성일: ${todo.created_at}\n마감일: ${todo.due_date}`;
+                track.appendChild(bar);
+
+                const todayLine = document.createElement('div');
+                todayLine.className = 'timeline-today';
+                todayLine.style.left = pct(today) + '%';
+                track.appendChild(todayLine);
+
+                row.appendChild(label);
+                row.appendChild(track);
+                contentEl.appendChild(row);
+            });
         }
 
         async function toggleComplete(todo) {
@@ -258,24 +464,26 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date })
+                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date, created_at: todo.created_at })
             });
             if (response.ok) {
                 fetchTodos();
             }
         }
 
-        async function editTodo(id) {
-            const title = prompt('새 제목을 입력하세요:');
-            const description = prompt('새 설명을 입력하세요:');
+        async function editTodo(todo) {
+            const title = prompt('새 제목을 입력하세요:', todo.title);
+            if (title === null) return;
+            const description = prompt('새 설명을 입력하세요:', todo.description);
+            if (description === null) return;
             const completed = confirm('완료된 작업입니까?');
-            const due_date = prompt('마감일 (YYYY-MM-DD, 비우면 삭제):') || null;
-            const response = await fetch(`/todos/${id}`, {
+            const due_date = prompt('마감일 (YYYY-MM-DD, 비우면 삭제):', todo.due_date || '') || null;
+            const response = await fetch(`/todos/${todo.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id, title, description, completed, due_date })
+                body: JSON.stringify({ id: todo.id, title, description, completed, due_date, created_at: todo.created_at })
             });
             if (response.ok) {
                 fetchTodos();
@@ -296,12 +504,13 @@
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
             const due_date = document.getElementById('due_date').value || null;
+            const today = new Date().toISOString().slice(0, 10);
             const response = await fetch('/todos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date })
+                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date, created_at: today })
             });
             if (response.ok) {
                 event.target.reset();
