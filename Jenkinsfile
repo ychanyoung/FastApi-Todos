@@ -7,17 +7,15 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub-credentials'
-        IMAGE_NAME           = 'chanzero11/fastapi-app'
-        REMOTE_USER          = 'sogang010'
-        REMOTE_HOST          = '163.239.77.105'
-        REMOTE_PATH          = '/home/sogang010@SGVDI.local'
-        REPO_URL             = 'https://github.com/ychanyoung/FastApi-Todos.git'
-        BRANCH_NAME          = 'main'
-        SONAR_TOKEN          = credentials('sonar-token')
-        SONAR_HOST_URL       = 'http://163.239.77.105:9000/'
-        CONTAINER_NAME       = 'FastApi-app'
-        HOST_PORT            = '8003'
-        CONTAINER_PORT       = '5001'
+        IMAGE_NAME            = 'chanzero11/fastapi-app'
+        IMAGE_TAG             = "${env.BUILD_NUMBER}"
+        REMOTE_USER           = 'sogang010'
+        REMOTE_HOST           = '163.239.77.105'
+        REMOTE_PATH           = '/home/sogang010@SGVDI.local/FastApi-Todos'
+        REPO_URL              = 'https://github.com/ychanyoung/FastApi-Todos.git'
+        BRANCH_NAME           = 'main'
+        SONAR_TOKEN           = credentials('sonar-token')
+        SONAR_HOST_URL        = 'http://163.239.77.105:9000/'
     }
 
     stages {
@@ -120,7 +118,8 @@ EOF
             steps {
                 dir('fastapi-app') {
                     script {
-                        docker.build("${IMAGE_NAME}:latest", ".")
+                        def img = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", ".")
+                        img.tag("latest")
                     }
                 }
             }
@@ -130,6 +129,7 @@ EOF
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
                         docker.image("${IMAGE_NAME}:latest").push()
                     }
                 }
@@ -138,13 +138,33 @@ EOF
 
         stage('Deploy') {
             steps {
-                script {
-                    sshagent(credentials: ['admin']) {
-                        sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker pull ${IMAGE_NAME}:latest'"
-                        sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker rm -f ${CONTAINER_NAME} || true'"
-                        sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}:latest'"
-                    }
+                sshagent(credentials: ['admin']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                            set -e
+                            if [ ! -d ${REMOTE_PATH} ]; then
+                                git clone ${REPO_URL} ${REMOTE_PATH}
+                            fi
+                            cd ${REMOTE_PATH}
+                            git fetch origin
+                            git reset --hard origin/${BRANCH_NAME}
+                            docker compose pull
+                            docker compose up -d --build
+                            docker compose ps
+                        '
+                    """
                 }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh """
+                    sleep 10
+                    curl -fsS http://${REMOTE_HOST}:5002/ -o /dev/null && echo 'FastAPI OK'
+                    curl -fsS http://${REMOTE_HOST}:7070/-/healthy && echo 'Prometheus OK'
+                    curl -fsS http://${REMOTE_HOST}:3000/api/health -o /dev/null && echo 'Grafana OK'
+                """
             }
         }
     }
@@ -152,6 +172,12 @@ EOF
     post {
         always {
             echo 'Pipeline completed.'
+        }
+        success {
+            echo "Deploy success: ${IMAGE_NAME}:${IMAGE_TAG}"
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }

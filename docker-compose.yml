@@ -1,13 +1,13 @@
-version: "3.7"
-
 services:
   fastapi-app:
     build:
-      context: ./fastapi-app      # Dockerfile이 위치한 디렉토리 경로
-      dockerfile: Dockerfile      # Dockerfile 이름 (생략 가능, 기본값은 'Dockerfile')
+      context: ./fastapi-app
+      dockerfile: Dockerfile
+    image: chanzero11/fastapi-app:latest
     container_name: FastApi-app
     ports:
       - "5002:8000"
+    restart: unless-stopped
     networks:
       - loadtest-net
 
@@ -17,12 +17,13 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true  # 메모리 제한 환경에서 유용한 옵션
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
       - sonarqube_conf:/opt/sonarqube/conf
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_extensions:/opt/sonarqube/extensions
+    restart: unless-stopped
     networks:
       - loadtest-net
 
@@ -35,6 +36,7 @@ services:
       - "7070:9090"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+    restart: unless-stopped
     networks:
       - loadtest-net
 
@@ -44,12 +46,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # admin은 기본 Grafana 로그인 비밀번호(변경된 비밀번호로 수정 권장)
+      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
       - GF_PLUGINS_PREINSTALL_AUTO_UPDATE=false
     volumes:
       - grafana-data:/var/lib/grafana
+    restart: unless-stopped
     networks:
       - loadtest-net
 
@@ -58,6 +61,7 @@ services:
     container_name: node-exporter
     ports:
       - "7100:9100"
+    restart: unless-stopped
     networks:
       - loadtest-net
 
@@ -70,5 +74,4 @@ volumes:
 
 networks:
   loadtest-net:
-    external: true
-    name: fastapi_todos_loadtest-net
+    driver: bridge

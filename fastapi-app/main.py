@@ -10,6 +10,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 BASE_DIR = Path(__file__).parent
 
 app = FastAPI()
+Instrumentator().instrument(app).expose(app)
 
 # To-Do 항목 모델
 class TodoItem(BaseModel):
@@ -69,7 +70,7 @@ def delete_todo(todo_id: int):
 # HTML 파일 서빙
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    with open("templates/index.html", "r") as file:
+    with open(BASE_DIR / "templates" / "index.html", "r", encoding="utf-8") as file:
         content = file.read()
     return HTMLResponse(content=content)
 
