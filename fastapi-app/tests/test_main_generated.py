@@ -35,7 +35,8 @@ def sample_todo():
         "description": "테스트용 설명",
         "completed": False,
         "due_date": "2024-12-31",
-        "created_at": "2024-12-01"
+        "created_at": "2024-12-01",
+        "priority": "green"
     }
 
 @pytest.fixture
@@ -48,7 +49,8 @@ def sample_todos():
             "description": "첫 번째 설명",
             "completed": False,
             "due_date": "2024-12-31",
-            "created_at": None
+            "created_at": None,
+            "priority": "green"
         },
         {
             "id": 2,
@@ -56,7 +58,8 @@ def sample_todos():
             "description": "두 번째 설명",
             "completed": True,
             "due_date": None,
-            "created_at": None
+            "created_at": None,
+            "priority": "green"
         }
     ]
 
@@ -135,7 +138,8 @@ class TestUpdateTodo:
             "description": "수정된 설명",
             "completed": True,
             "due_date": "2025-01-01",
-            "created_at": None
+            "created_at": None,
+            "priority": "green"
         }
 
         response = client.put("/todos/1", json=updated_todo)
