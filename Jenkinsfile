@@ -15,7 +15,7 @@ pipeline {
         REPO_URL              = 'https://github.com/ychanyoung/FastApi-Todos.git'
         BRANCH_NAME           = 'main'
         SONAR_TOKEN           = credentials('sonar-token')
-        SONAR_HOST_URL        = 'http://163.239.77.105:9000/'
+        SONAR_HOST_URL        = 'http://163.239.77.105:9000'
         JMETER_IMAGE_NAME     = 'my-arm-jmeter'
     }
 
