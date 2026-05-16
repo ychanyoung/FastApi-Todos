@@ -16,6 +16,7 @@ pipeline {
         BRANCH_NAME           = 'main'
         SONAR_TOKEN           = credentials('sonar-token')
         SONAR_HOST_URL        = 'http://163.239.77.105:9000/'
+        JMETER_IMAGE_NAME     = 'my-arm-jmeter'
     }
 
     stages {
@@ -153,6 +154,46 @@ EOF
                             docker compose ps
                         '
                     """
+                }
+            }
+        }
+
+        stage('Build JMeter Image') {
+            steps {
+                dir('jmeter') {
+                    script {
+                        docker.build("${JMETER_IMAGE_NAME}:latest", ".")
+                    }
+                }
+            }
+        }
+
+        stage('Run JMeter Load Test') {
+            steps {
+                sh '''
+                    BASE_DIR="$WORKSPACE/jmeter"
+
+                    rm -rf "$BASE_DIR/report" "$BASE_DIR/jmeter.log" "$BASE_DIR/results.jtl"
+                    mkdir -p "$BASE_DIR/report"
+
+                    TARGET_URL="http://${REMOTE_HOST}:5002"
+
+                    CONTAINER_ID=$(docker create --network host --user root:root ${JMETER_IMAGE_NAME}:latest \
+                        sh -c "jmeter -n -t test.jmx -JBASE_URL=$TARGET_URL -l results.jtl -Jjmeter.save.saveservice.output_format=csv -e -o report")
+
+                    docker cp "$BASE_DIR"/*.jmx $CONTAINER_ID:/opt/apache-jmeter-5.4.1/test.jmx
+
+                    docker start -a $CONTAINER_ID || true
+
+                    docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/report "$BASE_DIR/report" || true
+                    docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/results.jtl "$BASE_DIR/results.jtl" || true
+
+                    docker rm $CONTAINER_ID
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'jmeter/report/**/*, jmeter/results.jtl', allowEmptyArchive: true
                 }
             }
         }
