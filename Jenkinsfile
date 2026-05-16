@@ -177,9 +177,10 @@ EOF
                     mkdir -p "$BASE_DIR/report"
 
                     TARGET_URL="http://${REMOTE_HOST}:8000"
+                    INFLUX_URL="http://${REMOTE_HOST}:8086/write?db=jmeter"
 
                     CONTAINER_ID=$(docker create --network host --user root:root ${JMETER_IMAGE_NAME}:latest \
-                        sh -c "jmeter -n -t test.jmx -JBASE_URL=$TARGET_URL -l results.jtl -Jjmeter.save.saveservice.output_format=csv -e -o report")
+                        sh -c "jmeter -n -t test.jmx -JBASE_URL=$TARGET_URL -JINFLUX_URL=$INFLUX_URL -l results.jtl -Jjmeter.save.saveservice.output_format=csv -e -o report")
 
                     docker cp "$BASE_DIR"/*.jmx $CONTAINER_ID:/opt/apache-jmeter-5.4.1/test.jmx
 
