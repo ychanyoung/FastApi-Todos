@@ -187,16 +187,26 @@ EOF
 
                     docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/report/. "$BASE_DIR/report" || true
                     docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/results.jtl "$BASE_DIR/results.jtl" || true
+                    docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/jmeter.log "$BASE_DIR/jmeter.log" || true
 
                     echo "=== JMeter report directory contents ==="
                     ls -la "$BASE_DIR/report" || true
+
+                    echo "=== JMeter log (last 80 lines) ==="
+                    tail -n 80 "$BASE_DIR/jmeter.log" || true
+
+                    echo "=== JMeter log: ERROR / WARN entries ==="
+                    grep -E "ERROR|WARN" "$BASE_DIR/jmeter.log" || echo "(no ERROR/WARN entries found)"
+
+                    echo "=== Failed samples from results.jtl (non-200 responses) ==="
+                    awk -F',' 'NR==1 || ($4 != "200" && $4 != "responseCode")' "$BASE_DIR/results.jtl" | head -n 30 || true
 
                     docker rm $CONTAINER_ID
                 '''
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'jmeter/report/**/*, jmeter/results.jtl', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'jmeter/report/**/*, jmeter/results.jtl, jmeter/jmeter.log', allowEmptyArchive: true
                     publishHTML(target: [
                         reportName : 'JMeter Load Test Report',
                         reportDir  : 'jmeter/report',
