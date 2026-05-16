@@ -42,6 +42,51 @@
             font-size: 0.9em;
             margin-top: 4px;
         }
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        .priority-legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+        .priority-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .priority-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        .priority-red       { background: #e53935; }
+        .priority-orange    { background: #fb8c00; }
+        .priority-yellowgreen { background: #cddc39; }
+        .priority-green     { background: #43a047; }
+        .priority-btn {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .priority-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
         h2 {
             font-size: 1.15em;
             color: var(--text);
@@ -246,7 +291,23 @@
 <body>
     <header>
         <h1>To-Do List</h1>
-        <div class="subtitle">오늘의 할 일을 관리하세요</div>
+        <div class="header-row">
+            <div class="subtitle">오늘의 할 일을 관리하세요</div>
+            <div class="priority-legend">
+                <span class="priority-legend-item" title="지금 바로 처리해야 하는 일">
+                    <span class="priority-dot priority-red"></span>긴급·중요
+                </span>
+                <span class="priority-legend-item" title="중요하지만 여유 있게 진행해도 되는 일">
+                    <span class="priority-dot priority-orange"></span>중요
+                </span>
+                <span class="priority-legend-item" title="급하지만 비중이 크지 않은 일">
+                    <span class="priority-dot priority-yellowgreen"></span>긴급
+                </span>
+                <span class="priority-legend-item" title="시간 날 때 처리해도 되는 일">
+                    <span class="priority-dot priority-green"></span>일반
+                </span>
+            </div>
+        </div>
     </header>
 
     <h2>미완료 리스트</h2>
@@ -289,6 +350,14 @@
             });
         }
 
+        const PRIORITY_ORDER = ['green', 'yellowgreen', 'orange', 'red'];
+        const PRIORITY_LABEL = {
+            red: '긴급·중요',
+            orange: '중요',
+            yellowgreen: '긴급',
+            green: '일반'
+        };
+
         function renderTodoItem(todo) {
             const li = document.createElement('li');
             if (todo.completed) li.classList.add('completed');
@@ -299,6 +368,15 @@
             if (todo.due_date) {
                 dueText = ` | 마감일: ${todo.due_date}`;
                 if (!todo.completed && todo.due_date < today) dueClass += ' due-overdue';
+            }
+
+            if (!todo.completed) {
+                const priority = todo.priority || 'green';
+                const priorityButton = document.createElement('button');
+                priorityButton.className = `priority-btn priority-${priority}`;
+                priorityButton.title = `우선순위: ${PRIORITY_LABEL[priority]} (클릭하여 변경)`;
+                priorityButton.onclick = () => cyclePriority(todo);
+                li.appendChild(priorityButton);
             }
 
             const textSpan = document.createElement('span');
@@ -325,6 +403,26 @@
             li.appendChild(editButton);
             li.appendChild(deleteButton);
             return li;
+        }
+
+        async function cyclePriority(todo) {
+            const current = todo.priority || 'green';
+            const idx = PRIORITY_ORDER.indexOf(current);
+            const next = PRIORITY_ORDER[(idx + 1) % PRIORITY_ORDER.length];
+            const response = await fetch(`/todos/${todo.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: todo.id,
+                    title: todo.title,
+                    description: todo.description,
+                    completed: todo.completed,
+                    due_date: todo.due_date,
+                    created_at: todo.created_at,
+                    priority: next
+                })
+            });
+            if (response.ok) fetchTodos();
         }
 
         function renderEmpty(message) {
@@ -464,7 +562,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date, created_at: todo.created_at })
+                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date, created_at: todo.created_at, priority: todo.priority || 'green' })
             });
             if (response.ok) {
                 fetchTodos();
@@ -483,7 +581,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title, description, completed, due_date, created_at: todo.created_at })
+                body: JSON.stringify({ id: todo.id, title, description, completed, due_date, created_at: todo.created_at, priority: todo.priority || 'green' })
             });
             if (response.ok) {
                 fetchTodos();
@@ -510,7 +608,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date, created_at: today })
+                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date, created_at: today, priority: 'green' })
             });
             if (response.ok) {
                 event.target.reset();

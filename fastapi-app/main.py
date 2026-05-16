@@ -21,6 +21,7 @@ class TodoItem(BaseModel):
     completed: bool
     due_date: Optional[str] = None
     created_at: Optional[str] = None
+    priority: Optional[str] = "green"
 
 # JSON 파일 경로
 TODO_FILE = "todo.json"
