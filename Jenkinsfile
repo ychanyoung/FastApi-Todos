@@ -176,7 +176,7 @@ EOF
                     rm -rf "$BASE_DIR/report" "$BASE_DIR/jmeter.log" "$BASE_DIR/results.jtl"
                     mkdir -p "$BASE_DIR/report"
 
-                    TARGET_URL="http://${REMOTE_HOST}:5002"
+                    TARGET_URL="http://${REMOTE_HOST}:8000"
 
                     CONTAINER_ID=$(docker create --network host --user root:root ${JMETER_IMAGE_NAME}:latest \
                         sh -c "jmeter -n -t test.jmx -JBASE_URL=$TARGET_URL -l results.jtl -Jjmeter.save.saveservice.output_format=csv -e -o report")
