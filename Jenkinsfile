@@ -170,7 +170,7 @@ EOF
 
         stage('Run JMeter Load Test') {
             steps {
-                sh """
+                sh '''
                     BASE_DIR="$WORKSPACE/jmeter"
 
                     rm -rf "$BASE_DIR/report" "$BASE_DIR/jmeter.log" "$BASE_DIR/results.jtl"
@@ -189,7 +189,7 @@ EOF
                     docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/results.jtl "$BASE_DIR/results.jtl" || true
 
                     docker rm $CONTAINER_ID
-                """
+                '''
             }
             post {
                 always {
