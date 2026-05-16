@@ -194,6 +194,14 @@ EOF
             post {
                 always {
                     archiveArtifacts artifacts: 'jmeter/report/**/*, jmeter/results.jtl', allowEmptyArchive: true
+                    publishHTML(target: [
+                        reportName : 'JMeter Load Test Report',
+                        reportDir  : 'jmeter/report',
+                        reportFiles: 'index.html',
+                        keepAll    : true,
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: true
+                    ])
                 }
             }
         }
