@@ -185,8 +185,11 @@ EOF
 
                     docker start -a $CONTAINER_ID || true
 
-                    docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/report "$BASE_DIR/report" || true
+                    docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/report/. "$BASE_DIR/report" || true
                     docker cp $CONTAINER_ID:/opt/apache-jmeter-5.4.1/results.jtl "$BASE_DIR/results.jtl" || true
+
+                    echo "=== JMeter report directory contents ==="
+                    ls -la "$BASE_DIR/report" || true
 
                     docker rm $CONTAINER_ID
                 '''
