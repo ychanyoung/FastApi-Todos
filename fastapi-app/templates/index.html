@@ -186,6 +186,38 @@
         }
         .btn-submit:hover { background: var(--burgundy-dark); }
 
+        .category-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .category-업무 { background: rgba(220, 38, 38, 0.15); color: #b91c1c; }
+        .category-개인 { background: rgba(37, 99, 235, 0.15); color: #1d4ed8; }
+        .category-학습 { background: rgba(22, 163, 74, 0.15); color: #15803d; }
+        li.cat-업무 { background: rgba(220, 38, 38, 0.06); }
+        li.cat-개인 { background: rgba(37, 99, 235, 0.06); }
+        li.cat-학습 { background: rgba(22, 163, 74, 0.06); }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text);
+            font-size: 0.95em;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        select:focus {
+            border-color: var(--burgundy);
+            box-shadow: 0 0 0 3px rgba(139, 0, 41, 0.12);
+        }
+
         .empty {
             text-align: center;
             padding: 24px;
@@ -320,6 +352,12 @@
         <input type="text" id="title" placeholder="제목" required>
         <input type="text" id="description" placeholder="설명" required>
         <input type="date" id="due_date">
+        <select id="category">
+            <option value="">카테고리 (선택)</option>
+            <option value="업무">업무</option>
+            <option value="개인">개인</option>
+            <option value="학습">학습</option>
+        </select>
         <button type="submit" class="btn-submit">추가</button>
     </form>
 
@@ -361,6 +399,7 @@
         function renderTodoItem(todo) {
             const li = document.createElement('li');
             if (todo.completed) li.classList.add('completed');
+            if (todo.category) li.classList.add(`cat-${todo.category}`);
 
             const today = new Date().toISOString().slice(0, 10);
             let dueText = '';
@@ -379,9 +418,13 @@
                 li.appendChild(priorityButton);
             }
 
+            const categoryHtml = todo.category
+                ? `<span class="category-tag category-${todo.category}">${todo.category}</span>`
+                : '';
+
             const textSpan = document.createElement('span');
             textSpan.className = 'text';
-            textSpan.innerHTML = `<strong>${todo.title}</strong>: ${todo.description}<span class="${dueClass}">${dueText}</span>`;
+            textSpan.innerHTML = `${categoryHtml}<strong>${todo.title}</strong>: ${todo.description}<span class="${dueClass}">${dueText}</span>`;
 
             const checkButton = document.createElement('button');
             checkButton.className = 'btn-check';
@@ -419,7 +462,8 @@
                     completed: todo.completed,
                     due_date: todo.due_date,
                     created_at: todo.created_at,
-                    priority: next
+                    priority: next,
+                    category: todo.category || null
                 })
             });
             if (response.ok) fetchTodos();
@@ -562,7 +606,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date, created_at: todo.created_at, priority: todo.priority || 'green' })
+                body: JSON.stringify({ id: todo.id, title: todo.title, description: todo.description, completed: !todo.completed, due_date: todo.due_date, created_at: todo.created_at, priority: todo.priority || 'green', category: todo.category || null })
             });
             if (response.ok) {
                 fetchTodos();
@@ -576,12 +620,14 @@
             if (description === null) return;
             const completed = confirm('완료된 작업입니까?');
             const due_date = prompt('마감일 (YYYY-MM-DD, 비우면 삭제):', todo.due_date || '') || null;
+            const catInput = prompt('카테고리 (업무/개인/학습, 비우면 없음):', todo.category || '') || null;
+            const category = (catInput && ['업무', '개인', '학습'].includes(catInput)) ? catInput : null;
             const response = await fetch(`/todos/${todo.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: todo.id, title, description, completed, due_date, created_at: todo.created_at, priority: todo.priority || 'green' })
+                body: JSON.stringify({ id: todo.id, title, description, completed, due_date, created_at: todo.created_at, priority: todo.priority || 'green', category })
             });
             if (response.ok) {
                 fetchTodos();
@@ -602,13 +648,14 @@
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
             const due_date = document.getElementById('due_date').value || null;
+            const category = document.getElementById('category').value || null;
             const today = new Date().toISOString().slice(0, 10);
             const response = await fetch('/todos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date, created_at: today, priority: 'green' })
+                body: JSON.stringify({ id: Date.now(), title, description, completed: false, due_date, created_at: today, priority: 'green', category })
             });
             if (response.ok) {
                 event.target.reset();
