@@ -36,7 +36,8 @@ def sample_todo():
         "completed": False,
         "due_date": "2024-12-31",
         "created_at": "2024-12-01",
-        "priority": "green"
+        "priority": "green",
+        "category": None
     }
 
 @pytest.fixture
@@ -50,7 +51,8 @@ def sample_todos():
             "completed": False,
             "due_date": "2024-12-31",
             "created_at": None,
-            "priority": "green"
+            "priority": "green",
+            "category": None
         },
         {
             "id": 2,
@@ -59,7 +61,8 @@ def sample_todos():
             "completed": True,
             "due_date": None,
             "created_at": None,
-            "priority": "green"
+            "priority": "green",
+            "category": None
         }
     ]
 
@@ -139,7 +142,8 @@ class TestUpdateTodo:
             "completed": True,
             "due_date": "2025-01-01",
             "created_at": None,
-            "priority": "green"
+            "priority": "green",
+            "category": None
         }
 
         response = client.put("/todos/1", json=updated_todo)
