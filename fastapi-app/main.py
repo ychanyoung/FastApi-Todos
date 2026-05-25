@@ -1,17 +1,45 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 import json
 import os
+import logging
+import time
+from multiprocessing import Queue
 from pathlib import Path
 from prometheus_fastapi_instrumentator import Instrumentator
+from logging_loki import LokiQueueHandler
 
 BASE_DIR = Path(__file__).parent
 
 app = FastAPI()
 Instrumentator().instrument(app).expose(app)
+
+# Loki 로그 핸들러 설정
+loki_url = os.getenv("LOKI_ENDPOINT", "http://loki:3100/loki/api/v1/push")
+loki_handler = LokiQueueHandler(
+    Queue(-1),
+    url=loki_url,
+    tags={"application": "fastapi"},
+    version="1",
+)
+custom_logger = logging.getLogger("custom.access")
+custom_logger.setLevel(logging.INFO)
+custom_logger.addHandler(loki_handler)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    custom_logger.info(
+        f'{request.client.host} - "{request.method} {request.url.path}" '
+        f'{response.status_code} {duration:.3f}s'
+    )
+    return response
 
 # To-Do 항목 모델
 class TodoItem(BaseModel):
